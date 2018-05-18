@@ -17,11 +17,16 @@ class AdvertisementEntry(object):
         self.averageRatioBetweenVerbAndWords = 0.0
         self.updateScrapedText()
         self.evaluateScrapedHTML()
-        print(self.averageRatioBetweenVerbAndWords)
 
     def updateScrapedText(self):
         def extractTextFromChildren(tree):
             if isinstance(tree, basestring):
+                #if tree is a string. tree will be simply returned. If the
+                #string starts with a -, this could indicate that the
+                #author of the html hasn't used the <li> and <ul>
+                #tags and, thereby, we would not factor that we
+                #have some different keypoints and not only one sentence
+                tree = tree.startswith("-") and tree+"." or tree
                 return tree
             children = tree.xpath('child::node()')
             text = []
@@ -35,6 +40,14 @@ class AdvertisementEntry(object):
 
         def scrapeHTMLContent(htmlHandler):
             tree = html.fromstring(htmlHandler.content)
+            #here we extract additional informations
+            additionalInfo = tree.xpath('//div[@class="jobDetail-header"]//text()')
+            while "\n" in additionalInfo:
+                additionalInfo.remove("\n")
+            for i in range(0,len(additionalInfo)):
+                additionalInfo[i] = additionalInfo[i].replace("\n", "")
+            self.additionalInfo = ", ".join(additionalInfo).encode('utf8')
+            #here we start to actually extract the job advertisement's body
             children = tree.xpath('//div[@class="job-body"]/child::node()')
             while "\n" in children:
                 children.remove("\n")
@@ -45,7 +58,6 @@ class AdvertisementEntry(object):
 
         print("Anfragen von " + self.url)
         htmlHandler = get(self.url)
-        #savePureHTMLContent(htmlHandler)
         self.scrapedHTML = scrapeHTMLContent(htmlHandler)
         htmlHandler.close()
 
@@ -61,13 +73,16 @@ class AdvertisementEntry(object):
                 wordAmount += 1
                 if token.pos_ == "VERB" or token.pos_ == "AUX":
                     verbAmount += 1 
-                else:
-            averageRatioBetweenVerbAndWords += (float(verbAmount)/wordAmount)
+            if(wordAmount > 0):
+                averageRatioBetweenVerbAndWords += (float(verbAmount)/wordAmount)
         averageRatioBetweenVerbAndWords = averageRatioBetweenVerbAndWords/len(sentences)
         self.averageRatioBetweenVerbAndWords = averageRatioBetweenVerbAndWords
 
     def stringifyResults(self):
         return self.url + ": \n" + self.scrapedHTML + "\n"*3
+
+    def convertToCSV(self):
+        return str(self.averageRatioBetweenVerbAndWords) + ";" + self.additionalInfo + ";" + self.url  
 
 #------------------------------------------ other class
 
@@ -105,7 +120,7 @@ class AdvertisementList(object):
         lastLink = ''
         while counter < requestedJobs:
             #We are looking with help of regular expressions in the HTML-File for strings in the for href="/jobs/<jobName>"
-            htmlHandler = get(site + "/jobs/search?pg=" + str(pageCounter))
+            htmlHandler = get(site + "/jobs/search?pg=1&page=" + str(pageCounter))
             unicode_re = re.compile('(?<=href=\"/jobs/)[^\""]+\"', re.IGNORECASE | re.UNICODE)
             for line in htmlHandler:
                 m = unicode_re.search(line)
@@ -123,3 +138,11 @@ class AdvertisementList(object):
                     lastLink = link
             pageCounter = pageCounter + 1
             htmlHandler.close()
+
+    def convertEntriesToCSV(self):
+        csv = "number ; verb/word ; additionalInfo ; url\n"
+        counter = 1
+        for entry in self.advertisements:
+            csv += str(counter) + ";" + str(entry.averageRatioBetweenVerbAndWords) + ";" + entry.additionalInfo + ";" + entry.url + "\n"
+            counter += 1
+        return csv
