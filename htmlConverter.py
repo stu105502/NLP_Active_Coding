@@ -3,15 +3,21 @@
 import os
 import shutil
 import re
+import spacy
 from requests import get
 from lxml import html
+
+nlp = spacy.load('de_core_news_sm')
 
 class AdvertisementEntry(object):
     def __init__(self, url):
         super(AdvertisementEntry, self).__init__()
         self.scrapedHTML = ""
         self.url = url
+        self.averageRatioBetweenVerbAndWords = 0.0
         self.updateScrapedText()
+        self.evaluateScrapedHTML()
+        print(self.averageRatioBetweenVerbAndWords)
 
     def updateScrapedText(self):
         def extractTextFromChildren(tree):
@@ -35,7 +41,7 @@ class AdvertisementEntry(object):
             content = []
             for child in children:
                 content.append(extractTextFromChildren(child))
-            return " ".join(content).encode("utf-8")
+            return " ".join(content).encode("utf8")
 
         print("Anfragen von " + self.url)
         htmlHandler = get(self.url)
@@ -43,9 +49,27 @@ class AdvertisementEntry(object):
         self.scrapedHTML = scrapeHTMLContent(htmlHandler)
         htmlHandler.close()
 
+    def evaluateScrapedHTML(self):
+        sentences = self.scrapedHTML.split(". ")
+        averageRatioBetweenVerbAndWords = 0
+        for sentence in sentences:
+            doc = nlp(sentence.decode('utf8'))
+            wordAmount = 0
+            verbAmount = 0
+            #counts words and verbs in a sentence
+            for token in doc:
+                wordAmount += 1
+                if token.pos_ == "VERB" or token.pos_ == "AUX":
+                    verbAmount += 1 
+                else:
+            averageRatioBetweenVerbAndWords += (float(verbAmount)/wordAmount)
+        averageRatioBetweenVerbAndWords = averageRatioBetweenVerbAndWords/len(sentences)
+        self.averageRatioBetweenVerbAndWords = averageRatioBetweenVerbAndWords
+
     def stringifyResults(self):
         return self.url + ": \n" + self.scrapedHTML + "\n"*3
 
+#------------------------------------------ other class
 
 class AdvertisementList(object):
     def __init__(self):
