@@ -47,10 +47,13 @@ Für diesen Prozess nutzen wir das Python-Modul
 </ul>
  ```
 
- Würden wir uns an den Punkten orientieren, wäre dies alles insgesamt ein einziger Satz. Solche Listen sind ein sehr beliebtes Mittel für Inserate und können nicht einfach vernachlässigt werden, da solche Listen teilweise 50% eines Inserates ausmachen und wir daran interessiert sind, die Aktivität eines Inserates an dem Verhältnis zwischen Verben und Worten jedes Satzes auszumachen. Wir haben uns entschieden hinter jeden Satz, der in einem li-Element aufgelistet ist, künstlich einen Punkt hinzuzufügen. Um solche Spezialfälle fachgerecht zu behandeln, haben wir uns beschlossen rekursiv durch den HTML-Baum zu gehen.
+ Würden wir uns an den Punkten orientieren, wäre dies alles insgesamt ein einziger Satz. Solche Listen sind ein sehr beliebtes Mittel für Inserate und können nicht einfach vernachlässigt werden, da sie teilweise 50% eines Inserates ausmachen und wir daran interessiert sind, die Aktivität eines Inserates an dem Verhältnis zwischen Verben und Worten jedes Satzes auszumachen. Wir haben uns entschieden hinter jeden Satz, der in einem li-Element aufgelistet ist, künstlich einen Punkt hinzuzufügen. Um solche Spezialfälle fachgerecht zu behandeln, haben wir uns beschlossen rekursiv durch den HTML-Baum zu gehen. Man kann also sagen, dass wir versuchen die Sätze in unserem Inserat durch Punkte, welche wir gegebenfalls künstlich einfügen, zu trennen.
 
  Abschließend noch ein paar Punkte, welche uns das <i>Text-Scrapping</i> erschwert haben:
  <ul>
  	<li>Die Erfahrung der Nutzer in HTML war ein Problem. Manche Nutzer haben keine li-Element verwendet, um Listen zu kreieren, sonder haben einzelne Punkte simpel durh <i>-</i> angedeutet.</li>
- 	<li>Generell die freie Schreibweise in solchen Inseraten war ein Problem. Als Beispiel haben Teilsätze wie <i>Ihr Kontakt: Frau Schubert</i></li> eine wichtige semantische Bedeutung, aber sind können grundsätzlich nicht als ein Satz eingeordnet werden.
+ 	<li>Generell die freie Schreibweise in solchen Inseraten war ein Problem. Als Beispiel haben Teilsätze wie <i>Ihr Kontakt: Frau Schubert</i></li> eine wichtige semantische Bedeutung, aber können grundsätzlich nicht als ein Satz eingeordnet werden.
  </ul>
+
+ <h2>3) Berechnen der Aktivität</h2>
+ Unser Ansatz zum Berechnen der Aktivität eines Inserates liegt darin über die Satzmenge des Inserates zu gehen und einen Durchschnitt über das Verhältnis zwischen Verben und Worten zu gehen. Für das POS-Tagging verwenden wir die Python-Bibliothek <a href="https://spacy.io/">Spacy</a> und fangen explizit die Wörter ab, welche unser POS-Tagger als Verb oder Hilfsverb erkennt. Wir haben unser Ergebnis für 100 Job Inserate in der csv results.csv gespeichert.
